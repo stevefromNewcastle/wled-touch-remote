@@ -27,7 +27,7 @@ This is embedded firmware with no unit-test harness in this repo (confirmed: no 
 **Files:**
 - Modify: `include/app_config.h`
 
-- [ ] **Step 1: Add the board id**
+- [x] **Step 1: Add the board id**
 
 In `include/app_config.h`, change:
 
@@ -46,7 +46,7 @@ to:
 #define WLED_BOARD_WAVESHARE_P4B 3
 ```
 
-- [ ] **Step 2: Fold the new board into the DSI capability flag**
+- [x] **Step 2: Fold the new board into the DSI capability flag**
 
 Change:
 
@@ -62,7 +62,7 @@ to:
 
 (`WLED_TOUCH_GT911` and `WLED_BOARD_HAS_PSRAM` already derive from `WLED_PANEL_DSI`, so both automatically cover the new board — no changes needed to those two lines.)
 
-- [ ] **Step 3: Add the screen-size block**
+- [x] **Step 3: Add the screen-size block**
 
 After the existing `#if WLED_BOARD == WLED_BOARD_JC4880P443 ... #endif` block (the one setting `WLED_SCREEN_WIDTH 480` / `WLED_SCREEN_HEIGHT 800`), insert a new block for the square panel:
 
@@ -82,7 +82,7 @@ After the existing `#if WLED_BOARD == WLED_BOARD_JC4880P443 ... #endif` block (t
 #endif
 ```
 
-- [ ] **Step 4: Add it to `CYD_HARDWARE_PROFILE` selection**
+- [x] **Step 4: Add it to `CYD_HARDWARE_PROFILE` selection**
 
 Change:
 
@@ -116,7 +116,7 @@ to:
 
 (Reusing `CYD_PROFILE_ST7701_GT911` is fine — this board never goes through CYD auto-detection, the profile constant is only read by code paths this board doesn't take.)
 
-- [ ] **Step 5: Add the pin/timing macro block**
+- [x] **Step 5: Add the pin/timing macro block**
 
 Find the existing chain that ends with the JC4880P443 pin block and the CYD fallback:
 
@@ -179,7 +179,7 @@ Insert a new `#elif` branch between them, so it reads:
 #define CYD_TFT_SCLK 14
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add include/app_config.h
@@ -193,7 +193,7 @@ git commit -m "Add Waveshare ESP32-P4-WIFI6-Touch-LCD-4B board config"
 **Files:**
 - Modify: `platformio.ini`
 
-- [ ] **Step 1: Add the hardware environment**
+- [x] **Step 1: Add the hardware environment**
 
 After the `[env:jc4880p443]` block (ends just before `[env:jc8048w550c]`), insert:
 
@@ -233,7 +233,7 @@ extra_scripts =
     pre:scripts/embed_hosted_firmware.py
 ```
 
-- [ ] **Step 2: Add the macOS simulator environment**
+- [x] **Step 2: Add the macOS simulator environment**
 
 After the `[env:macos-jc4880p443]` block, insert:
 
@@ -249,7 +249,7 @@ build_flags =
     -D WLED_CYD_ENABLE_BATTERY=0
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add platformio.ini
@@ -262,13 +262,13 @@ git commit -m "Add waveshare-p4-4b and macos-waveshare-p4-4b PlatformIO environm
 
 This is the first real, running checkpoint: the simulator doesn't touch any of the ESP32-P4-specific display code (it's all guarded by `!WLED_TOUCH_SIMULATOR`), so it should build cleanly right after Tasks 1-2 and show the existing UI reflowed into a 720x720 square window.
 
-- [ ] **Step 1: Build the simulator**
+- [x] **Step 1: Build the simulator**
 
 Run: `pio run -e macos-waveshare-p4-4b`
 
 Expected: `SUCCESS` (requires `sdl2` installed — `brew install sdl2` per the README if not already present).
 
-- [ ] **Step 2: Run it and look at the UI**
+- [x] **Step 2: Run it and look at the UI**
 
 Run: `.pio/build/macos-waveshare-p4-4b/program`
 
@@ -285,7 +285,7 @@ Six spots in `src/display.cpp` currently hardcode `WLED_BOARD == WLED_BOARD_JC48
 **Files:**
 - Modify: `src/display.cpp`
 
-- [ ] **Step 1: Buffer variable declarations (~line 52)**
+- [x] **Step 1: Buffer variable declarations (~line 52)**
 
 Change:
 
@@ -305,7 +305,7 @@ to:
 lv_color_t* p4_full_draw_buf = nullptr;
 ```
 
-- [ ] **Step 2: DSI handle globals (~line 101)**
+- [x] **Step 2: DSI handle globals (~line 101)**
 
 Change:
 
@@ -321,7 +321,7 @@ to:
 esp_lcd_dsi_bus_handle_t dsi_bus = nullptr;
 ```
 
-- [ ] **Step 3: `drawSplashTextRow` (~line 685)**
+- [x] **Step 3: `drawSplashTextRow` (~line 685)**
 
 Change:
 
@@ -339,7 +339,7 @@ to:
     memcpy(dsi_framebuffer + y * kScreenWidth + x, splash_text_row, width * sizeof(uint16_t));
 ```
 
-- [ ] **Step 4: `drawDisplaySplash` (~line 747)**
+- [x] **Step 4: `drawDisplaySplash` (~line 747)**
 
 Change:
 
@@ -359,7 +359,7 @@ to:
       memcpy(dsi_framebuffer + (y0 + y) * kScreenWidth + x0,
 ```
 
-- [ ] **Step 5: `flushDisplay` (~line 782)**
+- [x] **Step 5: `flushDisplay` (~line 782)**
 
 Change:
 
@@ -375,7 +375,7 @@ to:
   const bool flip = display_flipped;
 ```
 
-- [ ] **Step 6: `displayClear` (~line 980)**
+- [x] **Step 6: `displayClear` (~line 980)**
 
 Change:
 
@@ -391,17 +391,17 @@ to:
   for (uint32_t i = 0; i < uint32_t(kScreenWidth) * kScreenHeight; ++i) dsi_framebuffer[i] = rgb565;
 ```
 
-- [ ] **Step 7: Verify JC4880P443 still compiles unchanged**
+- [x] **Step 7: Verify JC4880P443 still compiles unchanged**
 
 Run: `pio run -e jc4880p443`
 Expected: `SUCCESS` — this is a pure rename of the condition (JC4880P443 was the only board satisfying `WLED_PANEL_DSI` before this change added a second one), so JC4880P443 must build identically. This is the regression check for this task.
 
-- [ ] **Step 8: Verify the simulator still builds**
+- [x] **Step 8: Verify the simulator still builds**
 
 Run: `pio run -e macos-waveshare-p4-4b`
 Expected: `SUCCESS` (these branches are unreachable in sim builds, so this should be unaffected — confirms nothing else broke).
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add src/display.cpp
@@ -415,7 +415,7 @@ git commit -m "Generalize DSI framebuffer code paths to any WLED_PANEL_DSI board
 **Files:**
 - Modify: `src/display.cpp`
 
-- [ ] **Step 1: Replace the hardcoded JC4880-only bring-up with a board-selected version**
+- [x] **Step 1: Replace the hardcoded JC4880-only bring-up with a board-selected version**
 
 Find `initP4Panel()` (currently ~line 510-542):
 
@@ -562,7 +562,7 @@ bool initP4Panel() {
 }
 ```
 
-- [ ] **Step 2: Verify both hardware environments compile**
+- [x] **Step 2: Verify both hardware environments compile**
 
 Run: `pio run -e jc4880p443`
 Expected: `SUCCESS`
@@ -570,7 +570,7 @@ Expected: `SUCCESS`
 Run: `pio run -e waveshare-p4-4b`
 Expected: `SUCCESS` on first attempt, or a first-run toolchain/package download followed by `SUCCESS`. If it fails with a compiler error, re-check the constants against this task's code before moving on — this is the step most likely to surface a typo given the size of the init table.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/display.cpp
@@ -586,7 +586,7 @@ Unlike JC4880P443's plain GPIO backlight, this board drives its backlight throug
 **Files:**
 - Modify: `src/display.cpp`
 
-- [ ] **Step 1: Add the backlight helper**
+- [x] **Step 1: Add the backlight helper**
 
 Directly above `void displaySetBrightness(uint8_t brightness) {` (currently ~line 938), add:
 
@@ -610,7 +610,7 @@ void setBacklightWsp4b(uint8_t brightness) {
 
 ```
 
-- [ ] **Step 2: Branch `displaySetBrightness` on the new board**
+- [x] **Step 2: Branch `displaySetBrightness` on the new board**
 
 Change:
 
@@ -646,7 +646,7 @@ void displaySetBrightness(uint8_t brightness) {
 }
 ```
 
-- [ ] **Step 3: Branch `displayPrepareForBoot` on the new board**
+- [x] **Step 3: Branch `displayPrepareForBoot` on the new board**
 
 Change:
 
@@ -673,7 +673,7 @@ void displayPrepareForBoot() {
 #elif !WLED_TOUCH_SIMULATOR && WLED_PANEL_RGB
 ```
 
-- [ ] **Step 4: Verify all three hardware environments compile**
+- [x] **Step 4: Verify all three hardware environments compile**
 
 Run: `pio run -e esp32-cyd`
 Expected: `SUCCESS`
@@ -684,7 +684,7 @@ Expected: `SUCCESS`
 Run: `pio run -e waveshare-p4-4b`
 Expected: `SUCCESS`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/display.cpp
@@ -700,7 +700,7 @@ git commit -m "Add active-low PWM backlight handling for Waveshare P4-4B"
 **Files:**
 - Modify: `scripts/embed_hosted_firmware.py`
 
-- [ ] **Step 1: Extend the environment check**
+- [x] **Step 1: Extend the environment check**
 
 Change:
 
@@ -714,14 +714,14 @@ to:
 if env.subst("$PIOENV") in ("jc4880p443", "waveshare-p4-4b"):
 ```
 
-- [ ] **Step 2: Verify the hardware environment still compiles**
+- [x] **Step 2: Verify the hardware environment still compiles**
 
 Run: `pio run -e waveshare-p4-4b`
 Expected: `SUCCESS`, and the build log should show the generated
 `include/generated/hosted_c6_firmware_asm.h` being (re)written (same as it
 already does for `jc4880p443`).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add scripts/embed_hosted_firmware.py
@@ -735,7 +735,7 @@ git commit -m "Embed ESP-Hosted C6 firmware for waveshare-p4-4b builds"
 **Files:**
 - Modify: `src/update_manager.cpp`
 
-- [ ] **Step 1: Add the board branch**
+- [x] **Step 1: Add the board branch**
 
 Change:
 
@@ -763,12 +763,12 @@ constexpr const char* kBuildTarget = "esp32-cyd";
 #endif
 ```
 
-- [ ] **Step 2: Verify it compiles**
+- [x] **Step 2: Verify it compiles**
 
 Run: `pio run -e waveshare-p4-4b`
 Expected: `SUCCESS`
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/update_manager.cpp
@@ -783,7 +783,7 @@ git commit -m "Add waveshare-p4-4b OTA build-target identifier"
 - Modify: `.github/workflows/build-release.yml`
 - Modify: `.github/workflows/publish-web-installer.yml`
 
-- [ ] **Step 1: Add it to the release build step**
+- [x] **Step 1: Add it to the release build step**
 
 In `.github/workflows/build-release.yml`, change:
 
@@ -805,7 +805,7 @@ to:
           cp -a .pio/build/waveshare-p4-4b release-build/waveshare-p4-4b
 ```
 
-- [ ] **Step 2: Add it to the packaging step**
+- [x] **Step 2: Add it to the packaging step**
 
 In the same file, change:
 
@@ -826,7 +826,7 @@ to:
 
 (Same chip family and bootloader offset as `jc4880p443` — both are ESP32-P4.)
 
-- [ ] **Step 3: Add it to the web-installer download step**
+- [x] **Step 3: Add it to the web-installer download step**
 
 In `.github/workflows/publish-web-installer.yml`, change:
 
@@ -861,7 +861,7 @@ to:
             web-installer/firmware/wled-touch-remote-waveshare-p4-4b.bin
 ```
 
-- [ ] **Step 4: Add its manifest entry**
+- [x] **Step 4: Add its manifest entry**
 
 In the same file, change:
 
@@ -876,7 +876,7 @@ to:
           printf '%s\n' '{"name":"WLED Touch Remote — ESP32-P4 (Waveshare P4-4B)","version":"${{ steps.release.outputs.tag }}","new_install_improv":true,"builds":[{"chipFamily":"ESP32-P4","parts":[{"path":"firmware/wled-touch-remote-waveshare-p4-4b.bin","offset":0}]}]}' > web-installer/manifest-waveshare-p4-4b.json
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add .github/workflows/build-release.yml .github/workflows/publish-web-installer.yml
@@ -892,7 +892,7 @@ git commit -m "Add waveshare-p4-4b to release build and web installer publishing
 **Files:**
 - Modify: `README.md`
 
-- [ ] **Step 1: Add it to "Supported hardware"**
+- [x] **Step 1: Add it to "Supported hardware"**
 
 Change:
 
@@ -921,7 +921,7 @@ Supported devices:
 - **ESP32-024 and ESP32-2432S028-style resistive CYDs** - largely supported but **not recommended**
 ```
 
-- [ ] **Step 2: Add it to the "Build locally" instructions**
+- [x] **Step 2: Add it to the "Build locally" instructions**
 
 Change:
 
@@ -935,7 +935,7 @@ to:
 For the JC4880P443, use `pio run -e jc4880p443`; for the JC8048W550C, use `pio run -e jc8048w550c`; for the Waveshare ESP32-P4-WIFI6-Touch-LCD-4B, use `pio run -e waveshare-p4-4b`. See `platformio.ini` for all available environments and `include/app_config.h` for board-specific options.
 ```
 
-- [ ] **Step 3: Add it to the macOS simulator list**
+- [x] **Step 3: Add it to the macOS simulator list**
 
 Change:
 
@@ -965,7 +965,7 @@ pio run -e macos-waveshare-p4-4b
 .pio/build/macos-waveshare-p4-4b/program
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add README.md
@@ -978,12 +978,12 @@ git commit -m "Document Waveshare ESP32-P4-WIFI6-Touch-LCD-4B support"
 
 Nothing past this point can be verified from here — it needs the real board connected over USB.
 
-- [ ] Flash: `pio run -e waveshare-p4-4b -t upload` (or `pio run -e waveshare-p4-4b -t upload -t monitor` to also watch boot logs)
-- [ ] Confirm the ROM banner in the boot log — if it says `esp32p4-eco2`, switch `board = esp32-p4_r3-evboard` to `board = esp32-p4-evboard` in `platformio.ini` and re-flash (see Task 2, Step 1's comment)
-- [ ] Confirm the panel lights up and shows the WLED Touch Remote splash/UI, not a blank or garbled screen (if blank/garbled: check the `WSP4B_DSI_LDO_CHANNEL`/`WSP4B_DSI_LDO_MV` assumption flagged as a risk in the spec)
-- [ ] Confirm touch responds (tap through a couple of tabs)
-- [ ] Confirm Wi-Fi setup works (Settings → Wi-Fi, join a 2.4 GHz network) and the device discovers or connects to a WLED controller
-- [ ] Confirm Settings → Software Update → Check for Updates doesn't error out (validates the `kBuildTarget` string end to end once a release exists)
+- [x] Flash: `pio run -e waveshare-p4-4b -t upload` (or `pio run -e waveshare-p4-4b -t upload -t monitor` to also watch boot logs)
+- [x] Confirm the ROM banner in the boot log — if it says `esp32p4-eco2`, switch `board = esp32-p4_r3-evboard` to `board = esp32-p4-evboard` in `platformio.ini` and re-flash (see Task 2, Step 1's comment) — **the tested unit reported `esp32p4-eco2`; switched profile, see commit d9550b1**
+- [x] Confirm the panel lights up and shows the WLED Touch Remote splash/UI, not a blank or garbled screen (if blank/garbled: check the `WSP4B_DSI_LDO_CHANNEL`/`WSP4B_DSI_LDO_MV` assumption flagged as a risk in the spec) — confirmed working on real hardware
+- [x] Confirm touch responds (tap through a couple of tabs) — confirmed working on real hardware
+- [x] Confirm Wi-Fi setup works (Settings → Wi-Fi, join a 2.4 GHz network) and the device discovers or connects to a WLED controller — confirmed working on real hardware
+- [ ] Confirm Settings → Software Update → Check for Updates doesn't error out (validates the `kBuildTarget` string end to end once a release exists) — not yet testable, no release with a `waveshare-p4-4b` asset exists yet
 
 ---
 
