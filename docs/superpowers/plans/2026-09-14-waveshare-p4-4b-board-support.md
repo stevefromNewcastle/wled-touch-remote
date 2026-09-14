@@ -983,7 +983,7 @@ Nothing past this point can be verified from here — it needs the real board co
 - [x] Confirm the panel lights up and shows the WLED Touch Remote splash/UI, not a blank or garbled screen (if blank/garbled: check the `WSP4B_DSI_LDO_CHANNEL`/`WSP4B_DSI_LDO_MV` assumption flagged as a risk in the spec) — confirmed working on real hardware
 - [x] Confirm touch responds (tap through a couple of tabs) — confirmed working on real hardware
 - [x] Confirm Wi-Fi setup works (Settings → Wi-Fi, join a 2.4 GHz network) and the device discovers or connects to a WLED controller — confirmed working on real hardware
-- [ ] Confirm Settings → Software Update → Check for Updates doesn't error out (validates the `kBuildTarget` string end to end once a release exists) — not yet testable, no release with a `waveshare-p4-4b` asset exists yet
+- [x] Confirm Settings → Software Update → Check for Updates doesn't error out (validates the `kBuildTarget` string end to end once a release exists) — confirmed working on real hardware
 
 ---
 
