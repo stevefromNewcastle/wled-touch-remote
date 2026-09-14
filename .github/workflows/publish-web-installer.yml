@@ -53,13 +53,16 @@ jobs:
           gh release download "$tag" --repo "$GITHUB_REPOSITORY" --dir web-installer/firmware \
             --pattern "wled-touch-remote-${tag}-esp32-cyd-merged.bin" \
             --pattern "wled-touch-remote-${tag}-jc4880p443-merged.bin" \
-            --pattern "wled-touch-remote-${tag}-jc8048w550c-merged.bin"
+            --pattern "wled-touch-remote-${tag}-jc8048w550c-merged.bin" \
+            --pattern "wled-touch-remote-${tag}-waveshare-p4-4b-merged.bin"
           mv "web-installer/firmware/wled-touch-remote-${tag}-esp32-cyd-merged.bin" \
             web-installer/firmware/wled-touch-remote-wifi.bin
           mv "web-installer/firmware/wled-touch-remote-${tag}-jc4880p443-merged.bin" \
             web-installer/firmware/wled-touch-remote-jc4880p443.bin
           mv "web-installer/firmware/wled-touch-remote-${tag}-jc8048w550c-merged.bin" \
             web-installer/firmware/wled-touch-remote-jc8048w550c.bin
+          mv "web-installer/firmware/wled-touch-remote-${tag}-waveshare-p4-4b-merged.bin" \
+            web-installer/firmware/wled-touch-remote-waveshare-p4-4b.bin
 
       - name: Build browser simulators
         env:
@@ -74,6 +77,7 @@ jobs:
           printf '%s\n' '{"name":"WLED Touch Remote — ESP32-CYD","version":"${{ steps.release.outputs.tag }}","new_install_improv":true,"builds":[{"chipFamily":"ESP32","parts":[{"path":"firmware/wled-touch-remote-wifi.bin","offset":0}]}]}' > web-installer/manifest-esp32-cyd.json
           printf '%s\n' '{"name":"WLED Touch Remote — ESP32-P4 (JC4880P443)","version":"${{ steps.release.outputs.tag }}","new_install_improv":true,"builds":[{"chipFamily":"ESP32-P4","parts":[{"path":"firmware/wled-touch-remote-jc4880p443.bin","offset":0}]}]}' > web-installer/manifest-jc4880p443.json
           printf '%s\n' '{"name":"WLED Touch Remote — ESP32-S3 (JC8048W550C)","version":"${{ steps.release.outputs.tag }}","new_install_improv":true,"builds":[{"chipFamily":"ESP32-S3","parts":[{"path":"firmware/wled-touch-remote-jc8048w550c.bin","offset":0}]}]}' > web-installer/manifest-jc8048w550c.json
+          printf '%s\n' '{"name":"WLED Touch Remote — ESP32-P4 (Waveshare P4-4B)","version":"${{ steps.release.outputs.tag }}","new_install_improv":true,"builds":[{"chipFamily":"ESP32-P4","parts":[{"path":"firmware/wled-touch-remote-waveshare-p4-4b.bin","offset":0}]}]}' > web-installer/manifest-waveshare-p4-4b.json
           printf '%s\n' '{"name":"WLED Touch Remote","tag_name":"${{ steps.release.outputs.tag }}"}' > web-installer/release.json
 
       - uses: actions/configure-pages@v6
