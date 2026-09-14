@@ -49,7 +49,7 @@ lv_disp_draw_buf_t draw_buf;
 // taken from internal RAM and only fall back to PSRAM if that fails.
 lv_color_t* rgb_draw_buf_1 = nullptr;
 lv_color_t* rgb_draw_buf_2 = nullptr;
-#elif WLED_BOARD == WLED_BOARD_JC4880P443
+#elif WLED_PANEL_DSI
 // A full-frame LVGL buffer lets the renderer work without 40-line tiles.  Keep
 // the small pair only as a safe fallback if external RAM is unavailable.
 lv_color_t* p4_full_draw_buf = nullptr;
@@ -98,7 +98,7 @@ uint32_t eco_wake_started_ms = 0;
 bool sim_touch_down = false;
 int16_t sim_touch_x = 0;
 int16_t sim_touch_y = 0;
-#elif WLED_BOARD == WLED_BOARD_JC4880P443
+#elif WLED_PANEL_DSI
 esp_lcd_dsi_bus_handle_t dsi_bus = nullptr;
 esp_lcd_panel_io_handle_t dsi_io = nullptr;
 esp_lcd_panel_handle_t dpi_panel = nullptr;
@@ -682,7 +682,7 @@ uint8_t splashGlyphRow(char character, uint8_t row) {
 void drawSplashTextRow(uint16_t x, uint16_t y, uint16_t width) {
 #if WLED_TOUCH_SIMULATOR
   memcpy(sim_framebuffer + y * kScreenWidth + x, splash_text_row, width * sizeof(uint16_t));
-#elif WLED_BOARD == WLED_BOARD_JC4880P443
+#elif WLED_PANEL_DSI
   if (!display_flipped) {
     memcpy(dsi_framebuffer + y * kScreenWidth + x, splash_text_row, width * sizeof(uint16_t));
     cacheWriteback(dsi_framebuffer + y * kScreenWidth + x, width * sizeof(uint16_t));
@@ -744,7 +744,7 @@ void drawDisplaySplash() {
     memcpy(sim_framebuffer + (y0 + y) * kScreenWidth + x0,
            kWledLogoPixels + y * kWledLogoWidth, kWledLogoWidth * sizeof(uint16_t));
   }
-#elif WLED_BOARD == WLED_BOARD_JC4880P443
+#elif WLED_PANEL_DSI
   if (!display_flipped) {
     for (uint16_t y = 0; y < kWledLogoHeight; ++y) {
       memcpy(dsi_framebuffer + (y0 + y) * kScreenWidth + x0,
@@ -779,7 +779,7 @@ void flushDisplay(lv_disp_drv_t* disp, const lv_area_t* area, lv_color_t* color_
   const uint32_t started = millis();
 #if WLED_TOUCH_SIMULATOR
   for (int32_t y = 0; y < height; ++y) for (int32_t x = 0; x < width; ++x) sim_framebuffer[(area->y1 + y) * kScreenWidth + area->x1 + x] = color_p[y * width + x].full;
-#elif WLED_BOARD == WLED_BOARD_JC4880P443
+#elif WLED_PANEL_DSI
   const bool flip = display_flipped;
   if (!flip) {
     // LVGL supplies unflipped rows contiguously, so let the optimized memory
@@ -977,7 +977,7 @@ void displayClear(uint16_t rgb565) {
   if (!display_hardware_ready) return;
 #if WLED_TOUCH_SIMULATOR
   for (uint32_t i = 0; i < uint32_t(kScreenWidth) * kScreenHeight; ++i) sim_framebuffer[i] = rgb565;
-#elif WLED_BOARD == WLED_BOARD_JC4880P443
+#elif WLED_PANEL_DSI
   for (uint32_t i = 0; i < uint32_t(kScreenWidth) * kScreenHeight; ++i) dsi_framebuffer[i] = rgb565;
   cacheWriteback(dsi_framebuffer, size_t(kScreenWidth) * kScreenHeight * sizeof(uint16_t));
 #elif WLED_PANEL_RGB
