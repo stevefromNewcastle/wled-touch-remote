@@ -1004,8 +1004,27 @@ void applyDisplayRotation() {
   }
 #endif
 }
+#if !WLED_TOUCH_SIMULATOR && WLED_BOARD == WLED_BOARD_WAVESHARE_P4B
+void setBacklightWsp4b(uint8_t brightness) {
+  static bool attached = false;
+  if (!attached) {
+    attached = ledcAttach(WSP4B_TFT_BL, WSP4B_TFT_BL_FREQ, WSP4B_TFT_BL_RES) &&
+               ledcOutputInvert(WSP4B_TFT_BL, true);
+    if (attached) {
+      pinMode(WSP4B_TFT_BL_ENABLE, OUTPUT);
+      digitalWrite(WSP4B_TFT_BL_ENABLE, HIGH);
+    }
+  }
+  if (!attached) return;
+  const uint32_t duty = uint32_t(brightness) * ((1u << WSP4B_TFT_BL_RES) - 1) / 255;
+  ledcWrite(WSP4B_TFT_BL, duty);
+}
+#endif
+
 void displaySetBrightness(uint8_t brightness) {
-#if !WLED_TOUCH_SIMULATOR && WLED_PANEL_DSI
+#if !WLED_TOUCH_SIMULATOR && WLED_BOARD == WLED_BOARD_WAVESHARE_P4B
+  setBacklightWsp4b(brightness);
+#elif !WLED_TOUCH_SIMULATOR && WLED_PANEL_DSI
   setBacklight(JC4880_TFT_BL, brightness);
 #elif !WLED_TOUCH_SIMULATOR && WLED_PANEL_RGB
   setBacklight(JC8048_TFT_BL, brightness);
@@ -1017,7 +1036,12 @@ void displaySetBrightness(uint8_t brightness) {
 }
 
 void displayPrepareForBoot() {
-#if !WLED_TOUCH_SIMULATOR && WLED_PANEL_DSI
+#if !WLED_TOUCH_SIMULATOR && WLED_BOARD == WLED_BOARD_WAVESHARE_P4B
+  // Hold the backlight gate low until setBacklightWsp4b() has PWM running,
+  // so the panel never flashes full brightness with undefined contents.
+  pinMode(WSP4B_TFT_BL_ENABLE, OUTPUT);
+  digitalWrite(WSP4B_TFT_BL_ENABLE, LOW);
+#elif !WLED_TOUCH_SIMULATOR && WLED_PANEL_DSI
   pinMode(JC4880_TFT_BL, OUTPUT);
   digitalWrite(JC4880_TFT_BL, LOW);
 #elif !WLED_TOUCH_SIMULATOR && WLED_PANEL_RGB
