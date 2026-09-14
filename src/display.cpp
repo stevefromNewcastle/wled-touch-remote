@@ -49,7 +49,7 @@ lv_disp_draw_buf_t draw_buf;
 // taken from internal RAM and only fall back to PSRAM if that fails.
 lv_color_t* rgb_draw_buf_1 = nullptr;
 lv_color_t* rgb_draw_buf_2 = nullptr;
-#elif WLED_BOARD == WLED_BOARD_JC4880P443
+#elif WLED_PANEL_DSI
 // A full-frame LVGL buffer lets the renderer work without 40-line tiles.  Keep
 // the small pair only as a safe fallback if external RAM is unavailable.
 lv_color_t* p4_full_draw_buf = nullptr;
@@ -98,7 +98,7 @@ uint32_t eco_wake_started_ms = 0;
 bool sim_touch_down = false;
 int16_t sim_touch_x = 0;
 int16_t sim_touch_y = 0;
-#elif WLED_BOARD == WLED_BOARD_JC4880P443
+#elif WLED_PANEL_DSI
 esp_lcd_dsi_bus_handle_t dsi_bus = nullptr;
 esp_lcd_panel_io_handle_t dsi_io = nullptr;
 esp_lcd_panel_handle_t dpi_panel = nullptr;
@@ -507,26 +507,94 @@ void cacheWriteback(void* address, size_t size) {
                   ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_TYPE_DATA);
 }
 
+#if WLED_BOARD == WLED_BOARD_WAVESHARE_P4B
+constexpr int8_t kDsiTftRst = WSP4B_TFT_RST;
+constexpr uint8_t kDsiLdoChannel = WSP4B_DSI_LDO_CHANNEL;
+constexpr int kDsiLdoMv = WSP4B_DSI_LDO_MV;
+constexpr int kDsiLanes = WSP4B_DSI_LANES;
+constexpr int kDsiLaneMbps = WSP4B_DSI_LANE_MBPS;
+constexpr int kDsiDpiClockMhz = WSP4B_DPI_CLOCK_MHZ;
+constexpr int kDsiPanelWidth = WSP4B_PANEL_WIDTH;
+constexpr int kDsiPanelHeight = WSP4B_PANEL_HEIGHT;
+constexpr int kDsiHsyncBackPorch = WSP4B_HSYNC_BACK_PORCH;
+constexpr int kDsiHsyncPulseWidth = WSP4B_HSYNC_PULSE_WIDTH;
+constexpr int kDsiHsyncFrontPorch = WSP4B_HSYNC_FRONT_PORCH;
+constexpr int kDsiVsyncBackPorch = WSP4B_VSYNC_BACK_PORCH;
+constexpr int kDsiVsyncPulseWidth = WSP4B_VSYNC_PULSE_WIDTH;
+constexpr int kDsiVsyncFrontPorch = WSP4B_VSYNC_FRONT_PORCH;
+#else
+constexpr int8_t kDsiTftRst = JC4880_TFT_RST;
+constexpr uint8_t kDsiLdoChannel = JC4880_DSI_LDO_CHANNEL;
+constexpr int kDsiLdoMv = JC4880_DSI_LDO_MV;
+constexpr int kDsiLanes = JC4880_DSI_LANES;
+constexpr int kDsiLaneMbps = JC4880_DSI_LANE_MBPS;
+constexpr int kDsiDpiClockMhz = JC4880_DPI_CLOCK_MHZ;
+constexpr int kDsiPanelWidth = JC4880_PANEL_WIDTH;
+constexpr int kDsiPanelHeight = JC4880_PANEL_HEIGHT;
+constexpr int kDsiHsyncBackPorch = JC4880_HSYNC_BACK_PORCH;
+constexpr int kDsiHsyncPulseWidth = JC4880_HSYNC_PULSE_WIDTH;
+constexpr int kDsiHsyncFrontPorch = JC4880_HSYNC_FRONT_PORCH;
+constexpr int kDsiVsyncBackPorch = JC4880_VSYNC_BACK_PORCH;
+constexpr int kDsiVsyncPulseWidth = JC4880_VSYNC_PULSE_WIDTH;
+constexpr int kDsiVsyncFrontPorch = JC4880_VSYNC_FRONT_PORCH;
+#endif
+
 bool initP4Panel() {
   esp_ldo_channel_config_t ldo = {};
-  ldo.chan_id = JC4880_DSI_LDO_CHANNEL; ldo.voltage_mv = JC4880_DSI_LDO_MV;
+  ldo.chan_id = kDsiLdoChannel; ldo.voltage_mv = kDsiLdoMv;
   esp_lcd_dsi_bus_config_t bus = {};
-  bus.bus_id = 0; bus.num_data_lanes = JC4880_DSI_LANES; bus.phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT; bus.lane_bit_rate_mbps = JC4880_DSI_LANE_MBPS;
+  bus.bus_id = 0; bus.num_data_lanes = kDsiLanes; bus.phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT; bus.lane_bit_rate_mbps = kDsiLaneMbps;
   esp_lcd_dbi_io_config_t dbi = {};
   dbi.virtual_channel = 0; dbi.lcd_cmd_bits = 8; dbi.lcd_param_bits = 8;
   if (esp_ldo_acquire_channel(&ldo, &dsi_ldo) != ESP_OK || esp_lcd_new_dsi_bus(&bus, &dsi_bus) != ESP_OK ||
       esp_lcd_new_panel_io_dbi(dsi_bus, &dbi, &dsi_io) != ESP_OK) return false;
   esp_lcd_dpi_panel_config_t dpi = {};
-  dpi.virtual_channel = 0; dpi.dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT; dpi.dpi_clock_freq_mhz = JC4880_DPI_CLOCK_MHZ;
+  dpi.virtual_channel = 0; dpi.dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT; dpi.dpi_clock_freq_mhz = kDsiDpiClockMhz;
   dpi.pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB565; dpi.num_fbs = 1;
-  dpi.video_timing.h_size = JC4880_PANEL_WIDTH; dpi.video_timing.v_size = JC4880_PANEL_HEIGHT;
-  dpi.video_timing.hsync_back_porch = JC4880_HSYNC_BACK_PORCH; dpi.video_timing.hsync_pulse_width = JC4880_HSYNC_PULSE_WIDTH; dpi.video_timing.hsync_front_porch = JC4880_HSYNC_FRONT_PORCH;
-  dpi.video_timing.vsync_back_porch = JC4880_VSYNC_BACK_PORCH; dpi.video_timing.vsync_pulse_width = JC4880_VSYNC_PULSE_WIDTH; dpi.video_timing.vsync_front_porch = JC4880_VSYNC_FRONT_PORCH;
+  dpi.video_timing.h_size = kDsiPanelWidth; dpi.video_timing.v_size = kDsiPanelHeight;
+  dpi.video_timing.hsync_back_porch = kDsiHsyncBackPorch; dpi.video_timing.hsync_pulse_width = kDsiHsyncPulseWidth; dpi.video_timing.hsync_front_porch = kDsiHsyncFrontPorch;
+  dpi.video_timing.vsync_back_porch = kDsiVsyncBackPorch; dpi.video_timing.vsync_pulse_width = kDsiVsyncPulseWidth; dpi.video_timing.vsync_front_porch = kDsiVsyncFrontPorch;
   if (esp_lcd_new_panel_dpi(dsi_bus, &dpi, &dpi_panel) != ESP_OK) return false;
-  pinMode(JC4880_TFT_RST, OUTPUT); digitalWrite(JC4880_TFT_RST, LOW); delay(20); digitalWrite(JC4880_TFT_RST, HIGH); delay(120);
+  pinMode(kDsiTftRst, OUTPUT); digitalWrite(kDsiTftRst, LOW); delay(20); digitalWrite(kDsiTftRst, HIGH); delay(120);
+  auto cmd = [](uint8_t c, std::initializer_list<uint8_t> p) { return p4Write(c, p.begin(), p.size()); };
+#if WLED_BOARD == WLED_BOARD_WAVESHARE_P4B
+  // Waveshare ESP32-P4-WIFI6-Touch-LCD-4B's ST7703 vendor sequence, from
+  // examples/arduino/libraries/displays/displays_config.h in Waveshare's repo.
+  cmd(0xB9, {0xF1, 0x12, 0x83});
+  cmd(0xB1, {0x00, 0x00, 0x00, 0xDA, 0x80});
+  cmd(0xB2, {0x3C, 0x12, 0x30});
+  cmd(0xB3, {0x10, 0x10, 0x28, 0x28, 0x03, 0xFF, 0x00, 0x00, 0x00, 0x00});
+  cmd(0xB4, {0x80});
+  cmd(0xB5, {0x0A, 0x0A});
+  cmd(0xB6, {0x97, 0x97});
+  cmd(0xB8, {0x26, 0x22, 0xF0, 0x13});
+  cmd(0xBA, {0x31, 0x81, 0x0F, 0xF9, 0x0E, 0x06, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x44, 0x25, 0x00, 0x90, 0x0A, 0x00, 0x00, 0x01, 0x4F, 0x01, 0x00, 0x00, 0x37});
+  cmd(0xBC, {0x47});
+  cmd(0xBF, {0x02, 0x11, 0x00});
+  cmd(0xC0, {0x73, 0x73, 0x50, 0x50, 0x00, 0x00, 0x12, 0x70, 0x00});
+  cmd(0xC1, {0x25, 0x00, 0x32, 0x32, 0x77, 0xE4, 0xFF, 0xFF, 0xCC, 0xCC, 0x77, 0x77});
+  cmd(0xC6, {0x82, 0x00, 0xBF, 0xFF, 0x00, 0xFF});
+  cmd(0xC7, {0xB8, 0x00, 0x0A, 0x10, 0x01, 0x09});
+  cmd(0xC8, {0x10, 0x40, 0x1E, 0x02});
+  cmd(0xCC, {0x0B});
+  cmd(0xE0, {0x00, 0x0B, 0x10, 0x2C, 0x3D, 0x3F, 0x42, 0x3A, 0x07, 0x0D, 0x0F, 0x13, 0x15, 0x13, 0x14, 0x0F, 0x16,
+             0x00, 0x0B, 0x10, 0x2C, 0x3D, 0x3F, 0x42, 0x3A, 0x07, 0x0D, 0x0F, 0x13, 0x15, 0x13, 0x14, 0x0F, 0x16});
+  cmd(0xE3, {0x07, 0x07, 0x0B, 0x0B, 0x0B, 0x0B, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0xC0, 0x10});
+  cmd(0xE9, {0xC8, 0x10, 0x0A, 0x00, 0x00, 0x80, 0x81, 0x12, 0x31, 0x23, 0x4F, 0x86, 0xA0, 0x00, 0x47, 0x08, 0x00,
+             0x00, 0x0C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x00, 0x00, 0x00, 0x98, 0x02, 0x8B, 0xAF, 0x46, 0x02,
+             0x88, 0x88, 0x88, 0x88, 0x88, 0x98, 0x13, 0x8B, 0xAF, 0x57, 0x13, 0x88, 0x88, 0x88, 0x88, 0x88, 0x00,
+             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
+  cmd(0xEA, {0x97, 0x0C, 0x09, 0x09, 0x09, 0x78, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x9F, 0x31, 0x8B, 0xA8, 0x31,
+             0x75, 0x88, 0x88, 0x88, 0x88, 0x88, 0x9F, 0x20, 0x8B, 0xA8, 0x20, 0x64, 0x88, 0x88, 0x88, 0x88, 0x88,
+             0x23, 0x00, 0x00, 0x02, 0x71, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+             0x00, 0x00, 0x00, 0x40, 0x80, 0x81, 0x00, 0x00, 0x00, 0x00});
+  cmd(0xEF, {0xFF, 0xFF, 0x01});
+  const uint8_t colmod[] = {0x55}; p4Write(0x3A, colmod, 1);
+  p4Write(0x11, nullptr, 0); delay(250);
+  p4Write(0x29, nullptr, 0); delay(50);
+#else
   // JC4880P443's ST7701S vendor sequence. This is intentionally kept here
   // beside the native DSI setup instead of hidden in a graphics library.
-  auto cmd = [](uint8_t c, std::initializer_list<uint8_t> p) { return p4Write(c, p.begin(), p.size()); };
   cmd(0xFF,{0x77,0x01,0x00,0x00,0x13}); cmd(0xEF,{0x08});
   cmd(0xFF,{0x77,0x01,0x00,0x00,0x10}); cmd(0xC0,{0x63,0x00}); cmd(0xC1,{0x0D,0x02}); cmd(0xC2,{0x10,0x08}); cmd(0xCC,{0x10});
   cmd(0xB0,{0x80,0x09,0x53,0x0C,0xD0,0x07,0x0C,0x09,0x09,0x28,0x06,0xD4,0x13,0x69,0x2B,0x71});
@@ -536,6 +604,7 @@ bool initP4Panel() {
   cmd(0xE5,{0x09,0x2E,0xA0,0xA0,0x0B,0x30,0xA0,0xA0,0x05,0x2A,0xA0,0xA0,0x07,0x2C,0xA0,0xA0}); cmd(0xE6,{0x00,0x00,0x33,0x33}); cmd(0xE7,{0x44,0x44}); cmd(0xE8,{0x08,0x2D,0xA0,0xA0,0x0A,0x2F,0xA0,0xA0,0x04,0x29,0xA0,0xA0,0x06,0x2B,0xA0,0xA0}); cmd(0xEB,{0x00,0x00,0x4E,0x4E,0x00,0x00,0x00}); cmd(0xEC,{0x08,0x01});
   cmd(0xED,{0xB0,0x2B,0x98,0xA4,0x56,0x7F,0xFF,0xFF,0xFF,0xFF,0xF7,0x65,0x4A,0x89,0xB2,0x0B}); cmd(0xEF,{0x08,0x08,0x08,0x45,0x3F,0x54}); cmd(0xFF,{0x77,0x01,0x00,0x00,0x00});
   const uint8_t colmod[] = {0x55}; p4Write(0x3A,colmod,1); p4Write(0x11,nullptr,0); delay(120); p4Write(0x29,nullptr,0);
+#endif
   if (esp_lcd_panel_init(dpi_panel) != ESP_OK || esp_lcd_dpi_panel_get_frame_buffer(dpi_panel, 1, reinterpret_cast<void**>(&dsi_framebuffer)) != ESP_OK) return false;
   initGt911Touch();
   return dsi_framebuffer != nullptr;
@@ -682,7 +751,7 @@ uint8_t splashGlyphRow(char character, uint8_t row) {
 void drawSplashTextRow(uint16_t x, uint16_t y, uint16_t width) {
 #if WLED_TOUCH_SIMULATOR
   memcpy(sim_framebuffer + y * kScreenWidth + x, splash_text_row, width * sizeof(uint16_t));
-#elif WLED_BOARD == WLED_BOARD_JC4880P443
+#elif WLED_PANEL_DSI
   if (!display_flipped) {
     memcpy(dsi_framebuffer + y * kScreenWidth + x, splash_text_row, width * sizeof(uint16_t));
     cacheWriteback(dsi_framebuffer + y * kScreenWidth + x, width * sizeof(uint16_t));
@@ -744,7 +813,7 @@ void drawDisplaySplash() {
     memcpy(sim_framebuffer + (y0 + y) * kScreenWidth + x0,
            kWledLogoPixels + y * kWledLogoWidth, kWledLogoWidth * sizeof(uint16_t));
   }
-#elif WLED_BOARD == WLED_BOARD_JC4880P443
+#elif WLED_PANEL_DSI
   if (!display_flipped) {
     for (uint16_t y = 0; y < kWledLogoHeight; ++y) {
       memcpy(dsi_framebuffer + (y0 + y) * kScreenWidth + x0,
@@ -779,7 +848,7 @@ void flushDisplay(lv_disp_drv_t* disp, const lv_area_t* area, lv_color_t* color_
   const uint32_t started = millis();
 #if WLED_TOUCH_SIMULATOR
   for (int32_t y = 0; y < height; ++y) for (int32_t x = 0; x < width; ++x) sim_framebuffer[(area->y1 + y) * kScreenWidth + area->x1 + x] = color_p[y * width + x].full;
-#elif WLED_BOARD == WLED_BOARD_JC4880P443
+#elif WLED_PANEL_DSI
   const bool flip = display_flipped;
   if (!flip) {
     // LVGL supplies unflipped rows contiguously, so let the optimized memory
@@ -935,8 +1004,27 @@ void applyDisplayRotation() {
   }
 #endif
 }
+#if !WLED_TOUCH_SIMULATOR && WLED_BOARD == WLED_BOARD_WAVESHARE_P4B
+void setBacklightWsp4b(uint8_t brightness) {
+  static bool attached = false;
+  if (!attached) {
+    attached = ledcAttach(WSP4B_TFT_BL, WSP4B_TFT_BL_FREQ, WSP4B_TFT_BL_RES) &&
+               ledcOutputInvert(WSP4B_TFT_BL, true);
+    if (attached) {
+      pinMode(WSP4B_TFT_BL_ENABLE, OUTPUT);
+      digitalWrite(WSP4B_TFT_BL_ENABLE, HIGH);
+    }
+  }
+  if (!attached) return;
+  const uint32_t duty = uint32_t(brightness) * ((1u << WSP4B_TFT_BL_RES) - 1) / 255;
+  ledcWrite(WSP4B_TFT_BL, duty);
+}
+#endif
+
 void displaySetBrightness(uint8_t brightness) {
-#if !WLED_TOUCH_SIMULATOR && WLED_PANEL_DSI
+#if !WLED_TOUCH_SIMULATOR && WLED_BOARD == WLED_BOARD_WAVESHARE_P4B
+  setBacklightWsp4b(brightness);
+#elif !WLED_TOUCH_SIMULATOR && WLED_PANEL_DSI
   setBacklight(JC4880_TFT_BL, brightness);
 #elif !WLED_TOUCH_SIMULATOR && WLED_PANEL_RGB
   setBacklight(JC8048_TFT_BL, brightness);
@@ -948,7 +1036,12 @@ void displaySetBrightness(uint8_t brightness) {
 }
 
 void displayPrepareForBoot() {
-#if !WLED_TOUCH_SIMULATOR && WLED_PANEL_DSI
+#if !WLED_TOUCH_SIMULATOR && WLED_BOARD == WLED_BOARD_WAVESHARE_P4B
+  // Hold the backlight gate low until setBacklightWsp4b() has PWM running,
+  // so the panel never flashes full brightness with undefined contents.
+  pinMode(WSP4B_TFT_BL_ENABLE, OUTPUT);
+  digitalWrite(WSP4B_TFT_BL_ENABLE, LOW);
+#elif !WLED_TOUCH_SIMULATOR && WLED_PANEL_DSI
   pinMode(JC4880_TFT_BL, OUTPUT);
   digitalWrite(JC4880_TFT_BL, LOW);
 #elif !WLED_TOUCH_SIMULATOR && WLED_PANEL_RGB
@@ -977,7 +1070,7 @@ void displayClear(uint16_t rgb565) {
   if (!display_hardware_ready) return;
 #if WLED_TOUCH_SIMULATOR
   for (uint32_t i = 0; i < uint32_t(kScreenWidth) * kScreenHeight; ++i) sim_framebuffer[i] = rgb565;
-#elif WLED_BOARD == WLED_BOARD_JC4880P443
+#elif WLED_PANEL_DSI
   for (uint32_t i = 0; i < uint32_t(kScreenWidth) * kScreenHeight; ++i) dsi_framebuffer[i] = rgb565;
   cacheWriteback(dsi_framebuffer, size_t(kScreenWidth) * kScreenHeight * sizeof(uint16_t));
 #elif WLED_PANEL_RGB
