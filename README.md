@@ -132,6 +132,7 @@ Supported devices:
 - **Guition ESP32-P4 JC4880P443, 4.3-inch display** - highly recommended
 - **Guition JC2432W328C** - recommended capacitive CYD
 - **Guition JC8048W550C, 5-inch 800x480 display** (untested)
+- **Waveshare ESP32-P4-WIFI6-Touch-LCD-4B, 720x720 display** (preliminary; UI not yet tuned for the square screen)
 - **ESP32-024 and ESP32-2432S028-style resistive CYDs** - largely supported but **not recommended**
 
 On first boot, the firmware shows a one-time touch setup screen to confirm the touch hardware.
@@ -235,7 +236,7 @@ pio run -e esp32-cyd
 pio run -e esp32-cyd -t upload
 ```
 
-For the JC4880P443, use `pio run -e jc4880p443`; for the JC8048W550C, use `pio run -e jc8048w550c`. See `platformio.ini` for all available environments and `include/app_config.h` for board-specific options.
+For the JC4880P443, use `pio run -e jc4880p443`; for the JC8048W550C, use `pio run -e jc8048w550c`; for the Waveshare ESP32-P4-WIFI6-Touch-LCD-4B, use `pio run -e waveshare-p4-4b`. See `platformio.ini` for all available environments and `include/app_config.h` for board-specific options.
 
 ## macOS simulator
 
@@ -255,6 +256,10 @@ pio run -e macos-jc4880p443
 # 800x480 ESP32-S3 JC8048W550C
 pio run -e macos-jc8048w550c
 .pio/build/macos-jc8048w550c/program
+
+# 720x720 ESP32-P4 Waveshare P4-4B
+pio run -e macos-waveshare-p4-4b
+.pio/build/macos-waveshare-p4-4b/program
 ```
 
 Each command opens a resizable SDL window. Click or drag in the window to
